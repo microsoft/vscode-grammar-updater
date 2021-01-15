@@ -121,8 +121,10 @@ exports.update = function (repoId, repoPath, dest, modifyGrammar, version = 'mas
 			}
 
 			try {
-				fs.writeFileSync(dest, JSON.stringify(result, null, '\t').replace(/\n/g, '\r\n'));
-				let cgmanifestRead = JSON.parse(fs.readFileSync('./cgmanifest.json').toString());
+				const eol = getEOLFromPath(dest);
+				fs.writeFileSync(dest, JSON.stringify(result, null, '\t').replace(/\n/g, eol));
+				let cgmanifestContent = fs.readFileSync('./cgmanifest.json').toString();
+				let cgmanifestRead = JSON.parse(cgmanifestContent);
 				let promises = new Array();
 				const currentCommitDate = info.commitDate.substr(0, 10);
 
@@ -136,22 +138,24 @@ exports.update = function (repoId, repoPath, dest, modifyGrammar, version = 'mas
 					for (let i = 0; i < cgmanifestRead.registrations.length; i++) {
 						if (cgmanifestRead.registrations[i].component.git.repositoryUrl.substr(cgmanifestRead.registrations[i].component.git.repositoryUrl.length - repoId.length, repoId.length) === repoId) {
 							cgmanifestRead.registrations[i].component.git.commitHash = info.commitSha;
-								commitDate = currentCommitDate;
-								promises.push(download(packageJsonPath).then(function (packageJson) {
-									if (packageJson) {
-										try {
-											cgmanifestRead.registrations[i].version = JSON.parse(packageJson).version;
-										} catch (e) {
-											console.log('Cannot get version. File does not exist at ' + packageJsonPath);
-										}
+							commitDate = currentCommitDate;
+							promises.push(download(packageJsonPath).then(function (packageJson) {
+								if (packageJson) {
+									try {
+										cgmanifestRead.registrations[i].version = JSON.parse(packageJson).version;
+									} catch (e) {
+										console.log('Cannot get version. File does not exist at ' + packageJsonPath);
 									}
-								}));
+								}
+							}));
 							break;
 						}
 					}
 				}
+
 				Promise.all(promises).then(function (allResult) {
-					fs.writeFileSync('./cgmanifest.json', JSON.stringify(cgmanifestRead, null, '\t').replace(/\n/g, '\r\n'));
+					const eol = getExistingEOL(cgmanifestContent);
+					fs.writeFileSync('./cgmanifest.json', JSON.stringify(cgmanifestRead, null, '\t').replace(/\n/g, eol));
 				});
 				if (info) {
 					console.log('Updated ' + path.basename(dest) + ' to ' + repoId + '@' + info.commitSha.substr(0, 7) + ' (' + currentCommitDate + ')');
@@ -169,3 +173,30 @@ exports.update = function (repoId, repoPath, dest, modifyGrammar, version = 'mas
 	});
 };
 
+const CharCode_LF = 10;
+const CharCode_CR = 13;
+
+const DEFAULT_EOL = '\r\n';
+
+function getExistingEOL(content) {
+	for (let i = 0; i < content.length; i++) {
+		const ch = content.charCodeAt(i);
+		if (ch === CharCode_CR) {
+			if (i + 1 < content.length && content.charCodeAt(i + 1) == CharCode_LF) {
+				return '\r\n';
+			}
+			return '\r';
+		} else if (ch === CharCode_LF) {
+			return '\n';
+		}
+	}
+	return DEFAULT_EOL;
+}
+
+function getEOLFromPath(dest) {
+	try {
+		return getExistingEOL(fs.readFileSync(dest).toString());
+	} catch (e) {
+		return DEFAULT_EOL;
+	}
+}
