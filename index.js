@@ -43,8 +43,9 @@ function download(url, redirectCount) {
 	return new Promise((c, e) => {
 		var content = '';
 		https.get(getOptions(url), function (response) {
+			response.setEncoding('utf8');
 			response.on('data', function (data) {
-				content += data.toString();
+				content += data;
 			}).on('end', function () {
 				if (response.statusCode === 403 && response.headers['x-ratelimit-remaining'] === '0') {
 					e('GitHub API rate exceeded. Set GITHUB_TOKEN environment variable to increase rate limit.');
