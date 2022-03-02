@@ -83,7 +83,19 @@ function getCommitSha(repoId, repoPath) {
 	});
 }
 
-exports.update = function (repoId, repoPath, dest, modifyGrammar, version = 'master', packageJsonPathOverride = '') {
+/**
+ * Updates a TextMate grammar from a GitHub repository.
+ * 
+ * @param {string} repoId Github identifier of the grammar repository. For example `microsoft/TypeScript-TmLanguage`.
+ * @param {string} repoPath Path to the grammar file inside the repository.
+ * @param {string} dest Path to write the generated grammar file to
+ * @param {undefined | ((grammar: any) => any)} modifyGrammar Optional function which modifies the grammar data object before it is written.
+ * @param {string} version Branch to get the repo from
+ * @param {string} packageJsonPathOverride 
+ * 
+ * @returns {Promise<void>}
+ */
+function update(repoId, repoPath, dest, modifyGrammar, version = 'master', packageJsonPathOverride = '') {
 	var contentPath = 'https://raw.githubusercontent.com/' + repoId + `/${version}/` + repoPath;
 	console.log('Reading from ' + contentPath);
 	return download(contentPath).then(function (content) {
@@ -173,6 +185,8 @@ exports.update = function (repoId, repoPath, dest, modifyGrammar, version = 'mas
 		process.exit(1);
 	});
 };
+
+exports.update = update;
 
 const CharCode_LF = 10;
 const CharCode_CR = 13;
