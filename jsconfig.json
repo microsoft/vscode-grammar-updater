@@ -6,7 +6,8 @@
         "noEmit": false,
         "declaration": true,
         "emitDeclarationOnly": true,
-        "removeComments": false
+        "removeComments": false,
+        "newLine": "lf"
     },
     "files": [
         "index.js"
