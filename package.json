@@ -1,6 +1,6 @@
 {
   "name": "vscode-grammar-updater",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "Utility to update TextMate grammars that are part of VSCode language extensions",
   "main": "./index.js",
   "bin": "./bin.js",
